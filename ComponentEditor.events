@@ -1,0 +1,779 @@
+a:6:{s:4:"main";a:16:{s:8:"--fmedit";a:2:{s:8:"oncreate";s:7825:"$config = file_exists("config.ini") ? Resources::parseINI("config.ini") : array();
+
+define("CMP_PATH", $config['components']);
+define("IMG_PATH", $config['images24']);
+define("RSC_PATH", $config['resources']);
+define("EXT_PATH", $config['extensions']);
+
+Components::scan();
+
+class Component {
+    public $group;
+    public $class;
+    public $caption;
+    public $sort;
+    public $name;
+    public $w;
+    public $h;
+    public $modules;
+    public $events;
+    public $methods;
+    public $properties;
+    public $source;
+	public $extends;
+	public $useSkin;
+	public $dlls;
+    
+    function __construct($group, $class, $caption, $sort, $name, $useSkin = false, $modules = null, $dlls = null, $w = null, $h = null) {
+        $this->group = $group;
+        $this->class = $class;
+        $this->caption = $caption;
+        $this->sort = $sort;
+        $this->name = $name;
+        $this->useSkin = $useSkin;
+        $this->modules = $modules;
+        $this->dlls = $dlls;
+        $this->w = $w;
+        $this->h = $h;
+        
+        $this->events = array();
+        $this->methods = array();
+        $this->properties = array();
+    }
+}
+
+class Event {
+    public $caption;
+    public $function;
+    public $pattern;
+    public $icon;
+    
+    function __construct($caption, $function, $pattern, $icon = null) {
+        $this->caption = $caption;
+        $this->function = $function;
+        $this->pattern = $pattern;
+        $this->icon = $icon;
+    }
+}
+
+class Method {
+    public $caption;
+    public $function;
+    public $hint;
+    
+    function __construct($caption, $function, $hint = null) {
+        $this->caption = $caption;
+        $this->function = $function;
+        $this->hint = $hint;
+    }
+}
+
+class Property {
+    public $caption;
+    public $type;
+    public $variable;
+    public $realVar;
+    public $class;
+    public $values;
+    public $toExtends;
+    public $updateDesign;
+    
+    function __construct($caption, $type, $variable, $realVar = null, $class = null, $values = null, $toExtends = null, $updateDesign = null) {
+        $this->caption = $caption;
+        $this->type = $type;
+        $this->variable = $variable;
+        $this->realVar = $realVar;
+        $this->class = $class;
+        $this->values = $values;
+        $this->toExtends = $toExtends;
+        $this->updateDesign = $updateDesign;
+    }
+}
+
+class Components {
+	static public $items;
+	static public $deleted;
+
+	static function scan() {
+		dir_search(CMP_PATH, $info, "php", false, true);
+		$items = array();
+		foreach ($info as $__item) {
+			include($__item);
+			$item = new Component(
+				$result['GROUP'],
+				$result['CLASS'],
+				$result['CAPTION'],
+				$result['SORT'],
+				$result['NAME'],
+				$result['USE_SKIN'],
+				$result['MODULES'],
+				$result['DLLS'],
+				$result['W'],
+				$result['H']
+			);
+			$item->source['info'] = file_get_contents($__item);
+
+			$name = basename($__item);
+
+			$events = CMP_PATH . "events/$name";
+			if (file_exists($events)) {
+				$item->source['events'] = file_get_contents($events);
+				include($events);
+				foreach ($result as $_item) {
+					$item->events[] = new Event(
+						$_item['CAPTION'],
+						$_item['EVENT'],
+						$_item['INFO'],
+						$_item['ICON']
+					);
+				}
+			}
+
+			$methods = CMP_PATH . "methods/$name";
+			if (file_exists($methods)) {
+				$item->source['methods'] = file_get_contents($methods);
+				include($methods);
+				foreach ($result as $_item) {
+					$item->methods[] = new Method(
+						$_item['CAPTION'],
+						$_item['PROP'],
+						$_item['INLINE']
+					);
+				}
+			}
+
+			$properties = CMP_PATH . "properties/$name";
+			if (file_exists($properties)) {
+				$item->source['properties'] = file_get_contents($properties);
+				include($properties);
+				foreach ($result as $_item) {
+					$item->properties[] = new Property(
+						$_item['CAPTION'],
+						$_item['TYPE'],
+						$_item['PROP'],
+						$_item['REAL_PROP'],
+						$_item['CLASS'],
+						$_item['VALUES'],
+						$_item['ADD_GROUP'],
+						$_item['UPDATE_DSGN']
+					);
+				}
+			}
+
+			$module = CMP_PATH . "modules/$name";
+			if (file_exists($module)) {
+				$content = file_get_contents($module);
+				if (preg_match('/class .* extends (.*) \{/', $content, $matches)) {
+					$item->extends = $matches[1];
+				}
+				$item->source['module'] = $content;
+			}
+			
+			$items[] = $item;
+		}
+		self::$items = $items;
+	}
+	
+	static function getGroups() {
+        $items = self::$items;
+        $list = array();
+        foreach ($items as $item) {
+            $list[] = $item->group;
+        }
+        return array_unique($list);
+	}
+	
+	static function getPropTypes() {
+		$items = self::$items;
+        $list = array();
+        foreach ($items as $item) {
+            $props = $item->properties;
+            foreach ($props as $prop) {
+				$list[] = $prop->type;
+            }
+        }
+        return array_unique($list);
+	}
+	
+	static function getModuleExtends() {
+		$items = self::$items;
+        $list = array();
+        foreach ($items as $item) {
+			$list[] = $item->extends;
+        }
+        return $list;
+	}
+	
+	static function getClasses() {
+		$items = self::$items;
+        $list = array();
+        foreach ($items as $item) {
+			$list[] = $item->class;
+        }
+        return $list;
+	}
+}
+
+class Images {
+	static function getIcons() {
+		dir_search(IMG_PATH, $images, "bmp", false, false);
+		foreach ($images as $image) {
+			$list[] = basenameNoExt($image);
+		}
+		return $list;
+	}
+}
+
+class Resources {
+	static public $events;
+	static public $methods;
+	static public $properties;
+
+	static function loadEvents() {
+		dir_search("resources/events", $_items, false, true);
+		$items = array();
+		foreach ($_items as $_item) {
+			$item = self::parseINI($_item);
+			$items[] = new Event($item['caption'], $item['function'], $item['pattern'], $item['icon']);
+		}
+		self::$events = $items;
+	}
+	
+	static function loadMethods() {
+		dir_search("resources/methods", $_items, false, true);
+		$items = array();
+		foreach ($_items as $_item) {
+			$item = self::parseINI($_item);
+			$items[] = new Method($item['caption'], $item['function'], $item['hint']);
+		}
+		self::$methods = $items;
+	}
+	
+	static function loadProperties() {
+		dir_search("resources/properties", $_items, false, true);
+		$items = array();
+		foreach ($_items as $_item) {
+			$item = self::parseINI($_item);
+
+			if ($item['values']) {
+				$values = explode(",", $item['values']);
+			}
+			else $values = null;
+			
+			$items[] = new Property($item['caption'], $item['type'], $item['variable'], $item['realVar'], $item['class'], $values, $item['toExtends'], $item['updateDesign']);
+		}
+		self::$properties = $items;
+	}
+	
+	static function getEvents() {
+		$items = self::$events;
+		foreach ($items as $item) {
+			$list[] = $item->caption;
+		}
+		return $list;
+	}
+	
+	static function getMethods() {
+		$items = self::$methods;
+		foreach ($items as $item) {
+			$list[] = $item->caption;
+		}
+		return $list;
+	}
+	
+	static function getProperties() {
+		$items = self::$properties;
+		foreach ($items as $item) {
+			$list[] = $item->caption;
+		}
+		return $list;
+	}
+	
+	static function parseINI($file) {
+		if (file_exists($file)) {
+			$content = file_get_contents($file);
+			if ($content) {
+				$strs = explode("\r\n", $content);
+				$keys = array();
+				foreach ($strs as $str) {
+					if (preg_match('/^([a-zA-Z\s_0-9]+)=(.*)$/', $str, $matches)) {
+						$keys[$matches[1]] = $matches[2];
+					}
+				}
+				return $keys;
+			}
+			else return false;
+		}
+		else return false;
+	}
+}
+
+Resources::loadEvents();
+Resources::loadMethods();
+Resources::loadProperties();";s:6:"onshow";s:47:"c("listBox1")->text = Components::getClasses();";}s:7:"button1";a:1:{s:7:"onclick";s:47:"c("listBox1")->text = Components::getClasses();";}s:6:"label4";N;s:6:"label5";N;s:6:"label6";N;s:10:"classlabel";N;s:10:"grouplabel";N;s:12:"captionlabel";N;s:9:"namelabel";N;s:9:"sortlabel";N;s:8:"listbox1";a:2:{s:7:"onclick";s:433:"$index = $self->itemIndex;
+if ($index != -1) {
+    $component = Components::$items[$index];
+    c("classLabel")->caption = $component->class;
+    c("groupLabel")->caption = $component->group;
+    c("captionLabel")->caption = $component->caption;
+    c("nameLabel")->caption = $component->name;
+    c("sortLabel")->caption = $component->sort;
+    c("extendsLabel")->caption = $component->extends ? $component->extends : "";
+}";s:10:"ondblclick";s:267:"$index = $self->itemIndex;
+if ($index != -1) {
+    $component = Components::$items[$index];
+    Editor::$object = $component;
+    c("Edit")->showModal();
+    
+    Components::$items[$index] = Editor::$object;
+	c("listBox1")->text = Components::getClasses();
+}";}s:7:"button5";a:1:{s:7:"onclick";s:219:"Components::$items[] = new Component("additional", "TNewComponent", "Новый компонент", 1000, "newComponent");
+c("listBox1")->text = Components::getClasses();
+c("listBox1")->itemIndex = c("listBox1")->items->count - 1;";}s:7:"button6";a:1:{s:7:"onclick";s:274:"$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+	$item = Components::$items[$index];
+	unset(Components::$items[$index]);
+	Components::$items = array_values(Components::$items);
+	Components::$deleted[] = $item;
+	c("listBox1")->text = Components::getClasses();
+}";}s:6:"label7";N;s:12:"extendslabel";N;s:7:"button2";a:1:{s:7:"onclick";s:997:"$components = Components::$items;
+if ($components) {
+	foreach ($components as $component) {
+		$source = $component->source;
+		$file = $component->class . ".php";
+
+		file_put_contents(CMP_PATH . $file, $source['info']);
+		file_put_contents(CMP_PATH . "modules/$file", $source['module']);
+		file_put_contents(CMP_PATH . "properties/$file", $source['properties']);
+		file_put_contents(CMP_PATH . "events/$file", $source['events']);
+		file_put_contents(CMP_PATH . "methods/$file", $source['methods']);
+	}
+}
+
+$deleted = Components::$deleted;
+if ($deleted) {
+	foreach ($deleted as $item) {
+		$file = $item->class . ".php";
+		$paths = array(
+			CMP_PATH . $file,
+			CMP_PATH . "events/$file",
+			CMP_PATH . "modules/$file",
+			CMP_PATH . "properties/$file",
+			CMP_PATH . "methods/$file",
+		);
+		foreach ($paths as $path) {
+			if (file_exists($path)) file_delete($path);
+		}
+	}
+}
+
+messageBox("Файлы перезаписаны успешно!", "Перезапись", MB_ICONINFORMATION);
+run(DOC_ROOT);";}}s:4:"edit";a:24:{s:6:"label3";N;s:6:"label4";N;s:6:"label5";N;s:8:"--fmedit";a:2:{s:8:"oncreate";s:6434:"class Editor {
+    static public $object;
+    static public $temp;
+    static public $sourceSel = 'module';
+    
+    static function genEvents() {
+		$events = self::$temp->events;
+		$arr = "";
+		if ($events) {
+			foreach ($events as $event) {
+				$caption = $event->caption;
+				$function = $event->function;
+				$pattern = $event->pattern;
+				$icon = $event->icon;
+				
+				$arr .= "\$result[] = array(\r\n\t'CAPTION' => '$caption',\r\n\t'EVENT' => '$function',\r\n\t'INFO' => '$pattern',\r\n\t'ICON' => '$icon'\r\n);\r\n\r\n";
+			}
+		}
+		
+		$code = "<?\r\n\$result = array();\r\n\r\n{SPACE_FOR_CODE}return \$result;";
+		self::$temp->source['events'] = str_replace("{SPACE_FOR_CODE}", $arr, $code);
+    }
+    
+    static function genMethods() {
+		$methods = self::$temp->methods;
+		$arr = "";
+		if ($methods) {
+			foreach ($methods as $method) {
+				$caption = $method->caption;
+				$function = $method->function;
+				$hint = $method->hint;
+
+				$arr .= "\$result[] = array(\r\n\t'CAPTION' => '$caption',\r\n\t'PROP' => '$function',\r\n\t'INLINE' => '$hint',\r\n);\r\n\r\n";
+			}
+		}
+		
+		$code = "<?\r\n\$result = array();\r\n\r\n{SPACE_FOR_CODE}return \$result;";
+		self::$temp->source['methods'] = str_replace("{SPACE_FOR_CODE}", $arr, $code);
+    }
+    
+    static function genProperties() {
+		$properties = self::$temp->properties;
+		$arr = "";
+		if ($properties) {
+			foreach ($properties as $property) {
+				$caption = $property->caption;
+				$type = $property->type;
+				$variable = $property->variable;
+				$realVar = $property->realVar;
+				$class = $property->class;
+				$values = $property->values;
+				$toExtends = $property->toExtends;
+				$updateDesign = $property->updateDesign;
+				
+				if (is_array($values)) {
+					$_values = array();
+					foreach ($values as $value) {
+						$_values[] = "'$value'";
+					}
+					$values = implode(",", $_values);
+				}
+
+				$arr .= "\$result[] = array(\r\n\t'CAPTION' => '$caption',\r\n\t'TYPE' => '$type',\r\n\t'PROP' => '$variable',\r\n\t'REAL_PROP' => '$realVar',\r\n\t'CLASS' => '$class',\r\n\t'VALUES' => array($values),\r\n\t'ADD_GROUP' => '$toExtends',\r\n\t'UPDATE_DSGN' => '$updateDesign',\r\n);\r\n\r\n";
+			}
+		}
+
+		$code = "<?\r\n\$result = array();\r\n\r\n{SPACE_FOR_CODE}return \$result;";
+		self::$temp->source['properties'] = str_replace("{SPACE_FOR_CODE}", $arr, $code);
+    }
+    
+    static function genInfo() {
+		$class = self::$temp->class;
+		$group = self::$temp->group;
+		$caption = self::$temp->caption;
+		$name = self::$temp->name;
+		$sort = self::$temp->sort;
+		$useSkin = self::$temp->useSkin;
+		$w = self::$temp->w;
+		$h = self::$temp->h;
+		
+		$modules = self::$temp->modules;
+		$list = array();
+		if ($modules) {
+			foreach ($modules as $module) {
+				$list[] = "'$module'";
+			}
+			$modules = implode(",", $list);
+		}
+		else $modules = "";
+		
+		$dlls = self::$temp->dlls;
+		$list = array();
+		if ($dlls) {
+			foreach ($dlls as $dll) {
+				$list[] = "'$dll'";
+			}
+			$dlls = implode(",", $list);
+		}
+		else $dlls = "";
+		
+		$arr = "\$result['CLASS'] = '$class';\r\n";
+		$arr .= "\$result['GROUP'] = '$group';\r\n";
+		$arr .= "\$result['CAPTION'] = '$caption';\r\n";
+		$arr .= "\$result['NAME'] = '$name';\r\n";
+		$arr .= "\$result['SORT'] = '$sort';\r\n";
+		$arr .= "\$result['USE_SKIN'] = '$useSkin';\r\n";
+		$arr .= "\$result['W'] = '$w';\r\n";
+		$arr .= "\$result['H'] = '$h';\r\n";
+		$arr .= "\$result['MODULES'] = array($modules);\r\n";
+		$arr .= "\$result['DLLS'] = array($dlls);\r\n";
+		
+		$code = "<?\r\n\$result = array();\r\n\r\n{SPACE_FOR_CODE}return \$result;";
+		self::$temp->source['info'] = str_replace("{SPACE_FOR_CODE}", $arr, $code);
+    }
+    
+    static function componentInit() {
+		$initModule = RSC_PATH . "initModule.txt";
+		$pattern = file_exists($initModule) ? file_get_contents($initModule) : null;
+		if (!isset($pattern)) messageBox("Не найден шаблон по пути:\r\n$initModule", "Ошибка", MB_ICONERROR);
+		else {
+			$pattern = str_replace("%class%", self::$temp->class, $pattern);
+			$pattern = str_replace("%extends%", self::$temp->extends, $pattern);
+			self::$temp->source['module'] = $pattern;
+			c("Edit->synEditEx1")->text = self::$temp->source['module'];
+		}
+    }
+    
+    static function changeClass($class) {
+		$source = self::$temp->source['module'];
+		self::$temp->source['module'] = preg_replace('/class .* extends/i', "class $class extends", $source);
+		if (self::$sourceSel == "module") c("Edit->synEditEx1")->text = self::$temp->source['module'];
+    }
+    
+    static function changeExtends($extends) {
+		$source = self::$temp->source['module'];
+		self::$temp->source['module'] = preg_replace('/extends\s.*\s\{/i', "extends $extends {", $source);
+		if (self::$sourceSel == "module") c("Edit->synEditEx1")->text = self::$temp->source['module'];
+    }
+    
+    static function formInit() {
+		$temp = self::$temp = clone self::$object;
+		Editor::$sourceSel = "module";
+		
+		c("classEdit")->text = $temp->class;
+		c("groupEdit")->inText = $temp->group;
+		c("groupEdit")->text = Components::getGroups();
+		c("captionEdit")->text = $temp->caption;
+		c("nameEdit")->text = $temp->name;
+		c("sortEdit")->text = $temp->sort;
+		c("synEditEx1")->text = $temp->source['module'];
+		c("extendsEdit")->inText = $temp->extends ? $temp->extends : "";
+		c("skinCheck")->checked = $temp->useSkin;
+
+		$module = Components::getModuleExtends();
+		$classes = Components::getClasses();
+		$extends = array_merge($module, $classes);
+		c("extendsEdit")->text = array_unique($extends);
+
+		self::genEvents();
+		self::genMethods();
+		self::genProperties();
+		self::genInfo();
+    }
+}
+
+TSynHighlighter($self, array('HTML', 'SynHTML'));
+TSynHighlighter($self, array('PHP', 'SynPHP'));
+TSynHighlighter($self, array('General', 'SynGeneral'));
+TSynHighlighter($self, array('Cpp', 'SynCpp'));
+TSynHighlighter($self, array('Css', 'SynCss'));
+TSynHighlighter($self, array('SQL', 'SynSQL'));
+TSynHighlighter($self, array('JScript', 'SynJScript'));
+TSynHighlighter($self, array('XML', 'SynXML'));
+
+################################################## сам SynEdit
+/*$s = new TSynEdit;
+$s->name = 'TSynEdit1';
+$s->parent = $self;
+$s->w = $self->clientWidth;
+$s->h = $self->clientHeight;
+$s->WantTabs = true;
+gui_propSet($s->gutter, 'ShowLineNumbers', true);*/
+
+SPHP();";s:6:"onshow";s:19:"Editor::formInit();";}s:9:"classedit";a:1:{s:8:"onchange";s:90:"Editor::changeClass($self->text);
+Editor::$temp->class = $self->text;
+Editor::genInfo();";}s:11:"captionedit";a:1:{s:8:"onchange";s:57:"Editor::$temp->caption = $self->text;
+Editor::genInfo();";}s:8:"nameedit";a:1:{s:8:"onchange";s:54:"Editor::$temp->name = $self->text;
+Editor::genInfo();";}s:8:"sortedit";a:1:{s:8:"onchange";s:54:"Editor::$temp->sort = $self->text;
+Editor::genInfo();";}s:9:"groupedit";a:1:{s:8:"onchange";s:57:"Editor::$temp->group = $self->inText;
+Editor::genInfo();";}s:7:"button2";a:1:{s:7:"onclick";s:26:"c("Methods")->showModal();";}s:7:"button3";a:1:{s:7:"onclick";s:29:"c("Properties")->showModal();";}s:7:"button1";a:1:{s:7:"onclick";s:25:"c("Events")->showModal();";}s:7:"button5";a:1:{s:7:"onclick";s:88:"Editor::$sourceSel = "events";
+c("synEditEx1")->text = Editor::$temp->source['events'];";}s:7:"button6";a:1:{s:7:"onclick";s:90:"Editor::$sourceSel = "methods";
+c("synEditEx1")->text = Editor::$temp->source['methods'];";}s:7:"button7";a:1:{s:7:"onclick";s:96:"Editor::$sourceSel = "properties";
+c("synEditEx1")->text = Editor::$temp->source['properties'];";}s:7:"button4";a:2:{s:7:"onclick";s:88:"Editor::$sourceSel = "module";
+c("synEditEx1")->text = Editor::$temp->source['module'];";s:11:"onmousedown";s:42:"if ($button == 1) Editor::componentInit();";}s:10:"syneditex1";a:1:{s:8:"onchange";s:108:"$sourceSel = Editor::$sourceSel;
+if ($sourceSel == "module") Editor::$temp->source['module'] = $self->text;";}s:6:"label7";N;s:11:"extendsedit";a:1:{s:8:"onchange";s:98:"Editor::changeExtends($self->inText);
+Editor::$temp->extends = $self->inText;
+Editor::genInfo();";}s:7:"button8";a:1:{s:7:"onclick";s:40:"Editor::formInit();
+c("Edit")->close();";}s:7:"button9";a:1:{s:7:"onclick";s:59:"Editor::$object = clone Editor::$temp;
+c("Edit")->close();";}s:8:"button10";a:1:{s:7:"onclick";s:84:"Editor::$sourceSel = "info";
+c("synEditEx1")->text = Editor::$temp->source['info'];";}s:8:"button11";a:1:{s:7:"onclick";s:25:"c("Addons")->showModal();";}s:9:"skincheck";a:1:{s:7:"onclick";s:60:"Editor::$temp->useSkin = $self->checked;
+Editor::genInfo();";}}s:6:"events";a:14:{s:8:"--fmedit";a:3:{s:6:"onshow";s:19:"EventsForm::init();";s:8:"oncreate";s:399:"class EventsForm {
+	static function init() {
+		$events = Editor::$temp->events;
+		if ($events) {
+			$list = array();
+			foreach ($events as $event) {
+				$list[] = $event->caption;
+			}
+			c("Events->listBox1")->text = $list;
+		}
+		else c("Events->listBox1")->text = "";
+		c("Events->iconEdit")->text = Images::getIcons();
+		c("Events->eventsEdit")->text = Resources::getEvents();
+	}
+}";s:7:"onclose";s:20:"Editor::genEvents();";}s:6:"label2";N;s:6:"label3";N;s:6:"label4";N;s:8:"listbox1";a:1:{s:7:"onclick";s:329:"$index = $self->itemIndex;
+if ($index != -1) {
+	$event = Editor::$temp->events[$index];
+	c("captionEdit")->text = $event->caption;
+	c("functionEdit")->text = $event->function;
+	c("patternEdit")->text = $event->pattern;
+	c("iconEdit")->inText = $event->icon;
+	c("image1")->loadFromFile(IMG_PATH . $event->icon . ".bmp");
+}";}s:11:"captionedit";N;s:12:"functionedit";N;s:11:"patternedit";N;s:8:"iconedit";a:1:{s:8:"onchange";s:61:"c("image1")->loadFromFile(IMG_PATH . $self->inText . ".bmp");";}s:6:"image1";a:1:{s:7:"onclick";s:226:"$openDlg = c("openDlg1");
+if ($openDlg->execute()) {
+	$file = $openDlg->fileName;
+	file_copy($file, IMG_PATH . basename($file));
+	c("iconEdit")->text = Images::getIcons();
+	c("iconEdit")->inText = basenameNoExt($file);
+}";}s:7:"button2";a:1:{s:7:"onclick";s:382:"$caption = c("captionEdit")->text;
+$function = c("functionEdit")->text;
+$pattern = c("patternEdit")->text;
+$icon = c("iconEdit")->inText;
+
+$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+	$event = Editor::$temp->events[$index];
+	$event->caption = $caption;
+	$event->function = $function;
+	$event->pattern = $pattern;
+	$event->icon = $icon;
+	EventsForm::init();
+}";}s:7:"button1";a:1:{s:7:"onclick";s:239:"$caption = c("captionEdit")->text;
+$function = c("functionEdit")->text;
+$pattern = c("patternEdit")->text;
+$icon = c("iconEdit")->inText;
+
+Editor::$temp->events[] = new Event($caption, $function, $pattern, $icon);
+EventsForm::init();";}s:7:"button5";a:1:{s:7:"onclick";s:183:"$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+	unset(Editor::$temp->events[$index]);
+	Editor::$temp->events = array_values(Editor::$temp->events);
+	EventsForm::init();
+}";}s:10:"eventsedit";a:1:{s:8:"onchange";s:102:"$index = $self->itemIndex;
+Editor::$temp->events[] = Resources::$events[$index];
+EventsForm::init();";}}s:7:"methods";a:13:{s:8:"--fmedit";a:3:{s:6:"onshow";s:20:"MethodsForm::init();";s:8:"oncreate";s:349:"class MethodsForm {
+	static function init() {
+		$methods = Editor::$temp->methods;
+		if ($methods) {
+			$list = array();
+			foreach ($methods as $method) {
+				$list[] = $method->caption;
+			}
+			c("Methods->listBox1")->text = $list;
+		}
+		else c("Methods->listBox1")->text = "";
+		c("methodsEdit")->text = Resources::getMethods();
+	}
+}";s:7:"onclose";s:21:"Editor::genMethods();";}s:6:"label2";N;s:6:"label3";N;s:8:"listbox1";a:1:{s:7:"onclick";s:225:"$index = $self->itemIndex;
+if ($index != -1) {
+	$method = Editor::$temp->methods[$index];
+	c("captionEdit")->text = $method->caption;
+	c("functionEdit")->text = $method->function;
+	c("hintEdit")->text = $method->hint;
+}";}s:11:"captionedit";N;s:12:"functionedit";N;s:7:"button2";a:1:{s:7:"onclick";s:320:"$caption = c("captionEdit")->text;
+$function = c("functionEdit")->text;
+$hint = c("hintEdit")->text;
+
+$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+	$method = Editor::$temp->methods[$index];
+	$method->caption = $caption;
+	$method->function = $function;
+	$method->hint = $hint;
+	MethodsForm::init();
+}";}s:7:"button1";a:1:{s:7:"onclick";s:194:"$caption = c("captionEdit")->text;
+$function = c("functionEdit")->text;
+$hint = c("hintEdit")->text;
+
+Editor::$temp->methods[] = new Method($caption, $function, $hint);
+MethodsForm::init();";}s:7:"button5";a:1:{s:7:"onclick";s:187:"$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+	unset(Editor::$temp->methods[$index]);
+	Editor::$temp->methods = array_values(Editor::$temp->methods);
+	MethodsForm::init();
+}";}s:8:"hintedit";N;s:8:"opendlg1";a:0:{}s:6:"label5";N;s:11:"methodsedit";a:1:{s:8:"onchange";s:105:"$index = $self->itemIndex;
+Editor::$temp->methods[] = Resources::$methods[$index];
+MethodsForm::init();";}}s:10:"properties";a:20:{s:8:"--fmedit";a:3:{s:6:"onshow";s:23:"PropertiesForm::init();";s:8:"oncreate";s:433:"class PropertiesForm {
+	static function init() {
+		$properties = Editor::$temp->properties;
+		if ($properties) {
+			$list = array();
+			foreach ($properties as $property) {
+				$list[] = $property->caption;
+			}
+			c("Properties->listBox1")->text = $list;
+		}
+		else c("Properties->listBox1")->text = "";
+		c("typeEdit")->text = Components::getPropTypes();
+		c("propertiesEdit")->text = Resources::getProperties();
+	}
+}";s:7:"onclose";s:24:"Editor::genProperties();";}s:6:"label2";N;s:6:"label3";N;s:8:"listbox1";a:1:{s:7:"onclick";s:705:"$index = $self->itemIndex;
+if ($index != -1) {
+	$property = Editor::$temp->properties[$index];
+	c("captionEdit")->text = $property->caption;
+	c("typeEdit")->inText = $property->type;
+	c("variableEdit")->text = $property->variable;
+	c("extCheck")->checked = $property->toExtends;
+	c("designCheck")->checked = $property->updateDesign;
+	
+	if (is_array($property->values)) {
+		c("valuesEdit")->text = implode(",", $property->values);
+	}
+	else c("valuesEdit")->text = "";
+	
+	if ($property->realVar) {
+		c("realEdit")->text = $property->realVar;
+	}
+	else c("realEdit")->text = "";
+	
+	if ($property->class) {
+		c("classEdit")->text = $property->class;
+	}
+	else c("classEdit")->text = "";
+}";}s:11:"captionedit";a:0:{}s:7:"button2";a:1:{s:7:"onclick";s:735:"$caption = c("captionEdit")->text;
+$type = c("typeEdit")->inText;
+$variable = c("variableEdit")->text;
+$realVar = c("realEdit")->text;
+$class = c("classEdit")->text;
+$values = c("valuesEdit")->text ? explode(",", c("valuesEdit")->text) : null;
+$toExtends = c("extCheck")->checked;
+$updateDesign = c("designCheck")->checked;
+
+$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+	$property = Editor::$temp->properties[$index];
+	$property->caption = $caption;
+	$property->type = $type;
+	$property->variable = $variable;
+	$property->realVar = $realVar;
+	$property->class = $class;
+	$property->values = $values;
+	$property->toExtends = $toExtends;
+	$property->updateDesign = $updateDesign;
+	PropertiesForm::init();
+}";}s:7:"button1";a:1:{s:7:"onclick";s:484:"$caption = c("captionEdit")->text;
+$type = c("typeEdit")->inText;
+$variable = c("variableEdit")->text;
+$realVar = c("realEdit")->text;
+$class = c("classEdit")->text;
+$values = c("valuesEdit")->text ? explode(",", c("valuesEdit")->text) : null;
+$toExtends = c("extCheck")->checked;
+$updateDesign = c("designCheck")->checked;
+
+Editor::$temp->properties[] = new Property($caption, $type, $variable, $realVar, $class, $values, $toExtends, $updateDesign);
+PropertiesForm::init();";}s:7:"button5";a:1:{s:7:"onclick";s:199:"$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+	unset(Editor::$temp->properties[$index]);
+	Editor::$temp->properties = array_values(Editor::$temp->properties);
+	PropertiesForm::init();
+}";}s:8:"typeedit";N;s:12:"variableedit";N;s:6:"label4";N;s:6:"label5";N;s:9:"classedit";N;s:10:"valuesedit";N;s:8:"extcheck";N;s:11:"designcheck";N;s:6:"label6";N;s:8:"realedit";N;s:6:"label7";N;s:14:"propertiesedit";a:1:{s:8:"onchange";s:114:"$index = $self->itemIndex;
+Editor::$temp->properties[] = Resources::$properties[$index];
+PropertiesForm::init();";}}s:6:"addons";a:10:{s:8:"--fmedit";a:3:{s:6:"onshow";s:19:"AddonsForm::init();";s:8:"oncreate";s:487:"class AddonsForm {
+	static function init() {
+		$exts = Editor::$temp->modules;
+		$_dlls = Editor::$temp->dlls;
+		
+		$dlls = array();
+		if ($_dlls) {
+			foreach ($_dlls as $dll) {
+				if (preg_match('/^.+\..+$/', $dll)) {
+					$dlls[] = $dll;
+				}
+				else $dlls[] = "[$dll]";
+			}
+		}
+		
+		c("Addons->listBox1")->text = $exts;
+		c("Addons->listBox2")->text = $dlls;
+		
+		dir_search(EXT_PATH, $extsFiles, "dll", false, false);
+		c("extEdit")->text = $extsFiles;
+	}
+}";s:7:"onclose";s:18:"Editor::genInfo();";}s:8:"listbox1";a:0:{}s:7:"button2";a:1:{s:7:"onclick";s:187:"$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+	$temp = Editor::$temp;
+	unset($temp->modules[$index]);
+	$temp->modules = array_values($temp->modules);
+	AddonsForm::init();
+}";}s:9:"groupbox2";N;s:8:"listbox2";a:0:{}s:7:"button3";a:1:{s:7:"onclick";s:78:"$dll = c("dllEdit")->text;
+Editor::$temp->dlls[] = $dll;
+AddonsForm::init();";}s:7:"button4";a:1:{s:7:"onclick";s:178:"$index = c("listBox2")->itemIndex;
+if ($index != -1) {
+	$temp = Editor::$temp;
+	unset($temp->dlls[$index]);
+	$temp->dlls = array_values($temp->dlls);
+	AddonsForm::init();
+}";}s:7:"button1";a:1:{s:7:"onclick";s:83:"$ext = c("extEdit")->inText;
+Editor::$temp->modules[] = $ext;
+AddonsForm::init();";}s:7:"extedit";N;s:7:"dlledit";N;}}

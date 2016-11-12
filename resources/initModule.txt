@@ -1,0 +1,18 @@
+<?
+
+class %class% extends %extends% {
+	public $class_name_ex = __CLASS__;
+
+	public function __construct($owner = null, $init = null, $self = null) {
+		parent::__construct($owner, $init, $self);
+		if ($init) {
+			// Инициализация
+				
+		}
+	}
+	
+	public function __initComponentInfo() {
+		parent::__initComponentInfo();
+		// Инициализация компонента
+	}
+}
