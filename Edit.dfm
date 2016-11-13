@@ -17,6 +17,7 @@ object fmEdit: TForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  PopupMenu = fmMain.editorPopup
   Position = poDesigned
   Visible = False
   DesignSize = (
@@ -28,7 +29,7 @@ object fmEdit: TForm
     Left = 8
     Top = 8
     Width = 280
-    Height = 208
+    Height = 248
     HelpType = htKeyword
     HelpKeyword = 
       'AAAAAhQCEQVDTEFTUxEJVEdyb3VwQm94EQZQQVJBTVMUBxEIYXZpc2libGUFEQhh' +
@@ -118,6 +119,32 @@ object fmEdit: TForm
         'FAQRCmNsYXNzX25hbWUOCBEIACoAX2ZvbnQAEQRzZWxmCgZGtrARCAAqAHByb3Bz' +
         'FAARBHRleHQRBtLl6vHyMhEBeAYQEQF5BkA='
       Caption = #1053#1072#1089#1083#1077#1076#1086#1074#1072#1085#1080#1077':'
+    end
+    object label8: TLabel
+      Left = 8
+      Top = 176
+      Width = 44
+      Height = 13
+      HelpType = htKeyword
+      HelpKeyword = 
+        'AAAAAhQCEQVDTEFTUxEGVExhYmVsEQZQQVJBTVMUCBEIYXZpc2libGUFEQhhZW5h' +
+        'YmxlZAURAXcMQFQAAAAAAAARAWgMQDgAAAAAAAARBnBhcmVudBcJVEdyb3VwQm94' +
+        'FAQRCmNsYXNzX25hbWUOCBEIACoAX2ZvbnQAEQRzZWxmCgZGtrARCAAqAHByb3Bz' +
+        'FAARBHRleHQRBtLl6vHyMhEBeAYQEQF5BpA='
+      Caption = #1064#1080#1088#1080#1085#1072':'
+    end
+    object label9: TLabel
+      Left = 144
+      Top = 176
+      Width = 41
+      Height = 13
+      HelpType = htKeyword
+      HelpKeyword = 
+        'AAAAAhQCEQVDTEFTUxEGVExhYmVsEQZQQVJBTVMUCBEIYXZpc2libGUFEQhhZW5h' +
+        'YmxlZAURAXcMQFQAAAAAAAARAWgMQDgAAAAAAAARBnBhcmVudBcJVEdyb3VwQm94' +
+        'FAQRCmNsYXNzX25hbWUOCBEIACoAX2ZvbnQAEQRzZWxmCgZGtrARCAAqAHByb3Bz' +
+        'FAARBHRleHQRBtLl6vHyMhEBeAYQEQF5Brg='
+      Caption = #1042#1099#1089#1086#1090#1072':'
     end
     object classEdit: TEdit
       Left = 8
@@ -227,7 +254,7 @@ object fmEdit: TForm
     end
     object skinCheck: TCheckBox
       Left = 8
-      Top = 176
+      Top = 216
       Width = 264
       Height = 24
       HelpType = htKeyword
@@ -238,6 +265,44 @@ object fmEdit: TForm
         'b3BzFAARBHRleHQREcjx7+7r/Ofu4uDy/CDx6ujt'
       Caption = #1048#1089#1087#1086#1083#1100#1079#1086#1074#1072#1090#1100' '#1089#1082#1080#1085
       TabOrder = 6
+    end
+    object widthEdit: TEdit
+      Left = 8
+      Top = 192
+      Width = 128
+      Height = 21
+      HelpType = htKeyword
+      HelpKeyword = 
+        'AAAAAhQCEQVDTEFTUxEFVEVkaXQRBlBBUkFNUxQHEQhhdmlzaWJsZQURCGFlbmFi' +
+        'bGVkBREBdwxAWgAAAAAAABEBaAwAAAAAAAAAABEGcGFyZW50FwlUR3JvdXBCb3gU' +
+        'BBEKY2xhc3NfbmFtZQ4IEQgAKgBfZm9udAARBHNlbGYKBka2sBEIACoAcHJvcHMU' +
+        'ABEBeAYQEQF5BqA='
+      TabOrder = 7
+      Alignment = taLeftJustify
+      ColorOnEnter = clNone
+      FontColorOnEnter = clNone
+      TabOnEnter = False
+      MarginLeft = 0
+      MarginRight = 0
+    end
+    object heightEdit: TEdit
+      Left = 144
+      Top = 192
+      Width = 128
+      Height = 21
+      HelpType = htKeyword
+      HelpKeyword = 
+        'AAAAAhQCEQVDTEFTUxEFVEVkaXQRBlBBUkFNUxQHEQhhdmlzaWJsZQURCGFlbmFi' +
+        'bGVkBREBdwxAWgAAAAAAABEBaAwAAAAAAAAAABEGcGFyZW50FwlUR3JvdXBCb3gU' +
+        'BBEKY2xhc3NfbmFtZQ4IEQgAKgBfZm9udAARBHNlbGYKBka2sBEIACoAcHJvcHMU' +
+        'ABEBeAYQEQF5Bsg='
+      TabOrder = 8
+      Alignment = taLeftJustify
+      ColorOnEnter = clNone
+      FontColorOnEnter = clNone
+      TabOnEnter = False
+      MarginLeft = 0
+      MarginRight = 0
     end
   end
   object groupBox2: TGroupBox
@@ -390,7 +455,7 @@ object fmEdit: TForm
   end
   object groupBox3: TGroupBox
     Left = 8
-    Top = 224
+    Top = 264
     Width = 280
     Height = 152
     HelpType = htKeyword

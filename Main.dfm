@@ -17,7 +17,6 @@ object fmEdit: TForm
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
-  PopupMenu = fmMain.editorPopup
   Position = poDesigned
   Visible = False
   DesignSize = (

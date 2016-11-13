@@ -85,7 +85,7 @@ object fmEdit: TForm
     Left = 8
     Top = 8
     Width = 232
-    Height = 400
+    Height = 360
     HelpType = htKeyword
     HelpKeyword = 
       'AAAAAhQCEQVDTEFTUxEIVExpc3RCb3gRBlBBUkFNUxQHEQhhdmlzaWJsZQURCGFl' +
@@ -174,9 +174,9 @@ object fmEdit: TForm
     MarginRight = 0
   end
   object button1: TBitBtn
-    Left = 248
-    Top = 152
-    Width = 272
+    Left = 8
+    Top = 376
+    Width = 232
     Height = 32
     HelpType = htKeyword
     HelpKeyword = 
@@ -192,8 +192,8 @@ object fmEdit: TForm
   end
   object button2: TBitBtn
     Left = 248
-    Top = 184
-    Width = 272
+    Top = 152
+    Width = 136
     Height = 32
     HelpType = htKeyword
     HelpKeyword = 
@@ -204,13 +204,13 @@ object fmEdit: TForm
       'dBcFVEZvbnQUAw4MCgIQvIAODRQAEQ0AKgBjbGFzc19uYW1lEQdfT2JqZWN0DgwK' +
       'AhC8gA4NFAIOAwURCnBvc2l0aW9uZXgRCnBvRGVzaWduZWQRBHRleHQRB8rt7u/q' +
       '4DERAXgIAQARAXkG0A=='
-    Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100' '#1074#1099#1073#1088#1072#1085#1085#1099#1081' '#1084#1077#1090#1086#1076
+    Caption = #1057#1086#1093#1088#1072#1085#1080#1090#1100
     TabOrder = 5
   end
   object button5: TBitBtn
-    Left = 248
-    Top = 216
-    Width = 272
+    Left = 384
+    Top = 152
+    Width = 136
     Height = 32
     HelpType = htKeyword
     HelpKeyword = 
@@ -221,8 +221,8 @@ object fmEdit: TForm
       'dBcFVEZvbnQUAw4MCgIQvIAODRQAEQ0AKgBjbGFzc19uYW1lEQdfT2JqZWN0DgwK' +
       'AhC8gA4NFAIOAwURCnBvc2l0aW9uZXgRCnBvRGVzaWduZWQRBHRleHQRB8rt7u/q' +
       '4DERAXgIAQARAXkG8A=='
-    Caption = #1059#1076#1072#1083#1080#1090#1100' '#1074#1099#1073#1088#1072#1085#1085#1099#1081' '#1084#1077#1090#1086#1076
-    TabOrder = 7
+    Caption = #1059#1076#1072#1083#1080#1090#1100
+    TabOrder = 6
   end
   object methodsEdit: TComboBox
     Left = 248
@@ -241,6 +241,38 @@ object fmEdit: TForm
     Style = csDropDownList
     ItemHeight = 13
     TabOrder = 9
+  end
+  object button6: TBitBtn
+    Left = 248
+    Top = 184
+    Width = 136
+    Height = 32
+    HelpType = htKeyword
+    HelpKeyword = 
+      'AAAAAhQCEQVDTEFTUxEHVEJpdEJ0bhEGUEFSQU1TFAgRCGF2aXNpYmxlBREIYWVu' +
+      'YWJsZWQFEQF3DEBiAAAAAAAAEQFoDEBAAAAAAAAAEQZwYXJlbnQXBVRGb3JtFAYR' +
+      'CmNsYXNzX25hbWUOCBEPACoAX2NvbnN0cmFpbnRzFxBUU2l6ZUNvbnN0cmFpbnRz' +
+      'FAMOCQ4LEQRzZWxmCgWzEnARCAAqAHByb3BzFAARBwAqAGljb24AEQgAKgBfZm9u' +
+      'dAAODAoCBbIwDg0UAg4DBREKcG9zaXRpb25leBEKcG9EZXNpZ25lZBEEdGV4dBEH' +
+      'yu3u7+rgNhEBeAgBABEBeQgBKA=='
+    Caption = #1057#1082#1086#1087#1080#1088#1086#1074#1072#1090#1100
+    TabOrder = 10
+  end
+  object button7: TBitBtn
+    Left = 384
+    Top = 184
+    Width = 136
+    Height = 32
+    HelpType = htKeyword
+    HelpKeyword = 
+      'AAAAAhQCEQVDTEFTUxEHVEJpdEJ0bhEGUEFSQU1TFAgRCGF2aXNpYmxlBREIYWVu' +
+      'YWJsZWQFEQF3DEBiAAAAAAAAEQFoDEBAAAAAAAAAEQZwYXJlbnQXBVRGb3JtFAYR' +
+      'CmNsYXNzX25hbWUOCBEPACoAX2NvbnN0cmFpbnRzFxBUU2l6ZUNvbnN0cmFpbnRz' +
+      'FAMOCQ4LEQRzZWxmCgWzEnARCAAqAHByb3BzFAARBwAqAGljb24AEQgAKgBfZm9u' +
+      'dAAODAoCBbIwDg0UAg4DBREKcG9zaXRpb25leBEKcG9EZXNpZ25lZBEEdGV4dBEH' +
+      'yu3u7+rgNhEBeAgBiBEBeQgBKA=='
+    Caption = #1042#1089#1090#1072#1074#1080#1090#1100
+    TabOrder = 11
   end
   object openDlg1: __TNoVisual
     Left = 480

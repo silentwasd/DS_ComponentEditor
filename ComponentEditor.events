@@ -1,4 +1,4 @@
-a:6:{s:4:"main";a:16:{s:8:"--fmedit";a:2:{s:8:"oncreate";s:7825:"$config = file_exists("config.ini") ? Resources::parseINI("config.ini") : array();
+a:6:{s:4:"main";a:16:{s:8:"--fmedit";a:2:{s:8:"oncreate";s:8669:"$config = file_exists("config.ini") ? Resources::parseINI("config.ini") : array();
 
 define("CMP_PATH", $config['components']);
 define("IMG_PATH", $config['images24']);
@@ -23,16 +23,18 @@ class Component {
 	public $extends;
 	public $useSkin;
 	public $dlls;
+	public $transCaption;
     
     function __construct($group, $class, $caption, $sort, $name, $useSkin = false, $modules = null, $dlls = null, $w = null, $h = null) {
         $this->group = $group;
         $this->class = $class;
         $this->caption = $caption;
+        $this->transCaption = false; // Перевод заголовка
         $this->sort = $sort;
         $this->name = $name;
         $this->useSkin = $useSkin;
-        $this->modules = $modules;
-        $this->dlls = $dlls;
+        $this->modules = $modules; // Расширения
+        $this->dlls = $dlls; // Библиотеки
         $this->w = $w;
         $this->h = $h;
         
@@ -44,12 +46,14 @@ class Component {
 
 class Event {
     public $caption;
+    public $transCaption;
     public $function;
     public $pattern;
     public $icon;
     
     function __construct($caption, $function, $pattern, $icon = null) {
         $this->caption = $caption;
+        $this->transCaption = false;
         $this->function = $function;
         $this->pattern = $pattern;
         $this->icon = $icon;
@@ -58,11 +62,13 @@ class Event {
 
 class Method {
     public $caption;
+    public $transCaption;
     public $function;
     public $hint;
     
     function __construct($caption, $function, $hint = null) {
         $this->caption = $caption;
+        $this->transCaption = false;
         $this->function = $function;
         $this->hint = $hint;
     }
@@ -70,6 +76,7 @@ class Method {
 
 class Property {
     public $caption;
+    public $transCaption;
     public $type;
     public $variable;
     public $realVar;
@@ -80,6 +87,7 @@ class Property {
     
     function __construct($caption, $type, $variable, $realVar = null, $class = null, $values = null, $toExtends = null, $updateDesign = null) {
         $this->caption = $caption;
+        $this->transCaption = false;
         $this->type = $type;
         $this->variable = $variable;
         $this->realVar = $realVar;
@@ -111,27 +119,36 @@ class Components {
 				$result['W'],
 				$result['H']
 			);
-			$item->source['info'] = file_get_contents($__item);
+			
+			$_info = file_get_contents($__item);
+			$item->source['info'] = $_info;
+            $item->transCheck = self::checkOnTrans($_info);
 
 			$name = basename($__item);
 
 			$events = CMP_PATH . "events/$name";
+			$item->events = array();
 			if (file_exists($events)) {
-				$item->source['events'] = file_get_contents($events);
-				include($events);
-				foreach ($result as $_item) {
-					$item->events[] = new Event(
-						$_item['CAPTION'],
-						$_item['EVENT'],
-						$_item['INFO'],
-						$_item['ICON']
-					);
-				}
-			}
+                $content = file_get_contents($events);
+				$item->source['events'] = $content;
+				
+				if ($content) {
+                    include($events);
+				    foreach ($result as $_item) {
+                        $item->events[] = new Event(
+                            $_item['CAPTION'],
+                            $_item['EVENT'],
+                            $_item['INFO'],
+                            $_item['ICON']
+					   );
+				    }
+                }
+            }
 
 			$methods = CMP_PATH . "methods/$name";
 			if (file_exists($methods)) {
-				$item->source['methods'] = file_get_contents($methods);
+				$content = file_get_contents($methods);
+				$item->source['methods'] = $content;
 				include($methods);
 				foreach ($result as $_item) {
 					$item->methods[] = new Method(
@@ -211,6 +228,11 @@ class Components {
 			$list[] = $item->class;
         }
         return $list;
+	}
+	
+	static function checkOnTrans($text) {
+        if (preg_match('/t\(\'.*\'\)/', $text)) return true;
+        if (preg_match('/t\(".*"\)/', $text)) return true;
 	}
 }
 
@@ -336,17 +358,17 @@ if ($index != -1) {
 	Components::$items = array_values(Components::$items);
 	Components::$deleted[] = $item;
 	c("listBox1")->text = Components::getClasses();
-}";}s:6:"label7";N;s:12:"extendslabel";N;s:7:"button2";a:1:{s:7:"onclick";s:997:"$components = Components::$items;
+}";}s:6:"label7";N;s:12:"extendslabel";N;s:7:"button2";a:1:{s:7:"onclick";s:1115:"$components = Components::$items;
 if ($components) {
 	foreach ($components as $component) {
 		$source = $component->source;
 		$file = $component->class . ".php";
 
-		file_put_contents(CMP_PATH . $file, $source['info']);
-		file_put_contents(CMP_PATH . "modules/$file", $source['module']);
-		file_put_contents(CMP_PATH . "properties/$file", $source['properties']);
-		file_put_contents(CMP_PATH . "events/$file", $source['events']);
-		file_put_contents(CMP_PATH . "methods/$file", $source['methods']);
+		if ($source['info']) file_put_contents(CMP_PATH . $file, $source['info']);
+		if ($source['module']) file_put_contents(CMP_PATH . "modules/$file", $source['module']);
+		if ($source['properties']) file_put_contents(CMP_PATH . "properties/$file", $source['properties']);
+		if ($source['events']) file_put_contents(CMP_PATH . "events/$file", $source['events']);
+		if ($source['methods']) file_put_contents(CMP_PATH . "methods/$file", $source['methods']);
 	}
 }
 
@@ -368,7 +390,7 @@ if ($deleted) {
 }
 
 messageBox("Файлы перезаписаны успешно!", "Перезапись", MB_ICONINFORMATION);
-run(DOC_ROOT);";}}s:4:"edit";a:24:{s:6:"label3";N;s:6:"label4";N;s:6:"label5";N;s:8:"--fmedit";a:2:{s:8:"oncreate";s:6434:"class Editor {
+run(DOC_ROOT);";}}s:4:"edit";a:28:{s:6:"label3";N;s:6:"label4";N;s:6:"label5";N;s:8:"--fmedit";a:2:{s:8:"oncreate";s:6507:"class Editor {
     static public $object;
     static public $temp;
     static public $sourceSel = 'module';
@@ -520,6 +542,8 @@ run(DOC_ROOT);";}}s:4:"edit";a:24:{s:6:"label3";N;s:6:"label4";N;s:6:"label5";N;
 		c("synEditEx1")->text = $temp->source['module'];
 		c("extendsEdit")->inText = $temp->extends ? $temp->extends : "";
 		c("skinCheck")->checked = $temp->useSkin;
+		c("widthEdit")->text = $temp->w;
+		c("heightEdit")->text = $temp->h;
 
 		$module = Components::getModuleExtends();
 		$classes = Components::getClasses();
@@ -568,7 +592,9 @@ Editor::genInfo();";}s:7:"button8";a:1:{s:7:"onclick";s:40:"Editor::formInit();
 c("Edit")->close();";}s:7:"button9";a:1:{s:7:"onclick";s:59:"Editor::$object = clone Editor::$temp;
 c("Edit")->close();";}s:8:"button10";a:1:{s:7:"onclick";s:84:"Editor::$sourceSel = "info";
 c("synEditEx1")->text = Editor::$temp->source['info'];";}s:8:"button11";a:1:{s:7:"onclick";s:25:"c("Addons")->showModal();";}s:9:"skincheck";a:1:{s:7:"onclick";s:60:"Editor::$temp->useSkin = $self->checked;
-Editor::genInfo();";}}s:6:"events";a:14:{s:8:"--fmedit";a:3:{s:6:"onshow";s:19:"EventsForm::init();";s:8:"oncreate";s:399:"class EventsForm {
+Editor::genInfo();";}s:6:"label8";N;s:6:"label9";N;s:9:"widthedit";a:1:{s:8:"onchange";s:51:"Editor::$temp->w = $self->text;
+Editor::genInfo();";}s:10:"heightedit";a:1:{s:8:"onchange";s:51:"Editor::$temp->h = $self->text;
+Editor::genInfo();";}}s:6:"events";a:16:{s:8:"--fmedit";a:3:{s:6:"onshow";s:19:"EventsForm::init();";s:8:"oncreate";s:1330:"class EventsForm {
 	static function init() {
 		$events = Editor::$temp->events;
 		if ($events) {
@@ -579,24 +605,47 @@ Editor::genInfo();";}}s:6:"events";a:14:{s:8:"--fmedit";a:3:{s:6:"onshow";s:19:"
 			c("Events->listBox1")->text = $list;
 		}
 		else c("Events->listBox1")->text = "";
-		c("Events->iconEdit")->text = Images::getIcons();
-		c("Events->eventsEdit")->text = Resources::getEvents();
+		c("Events->iconEdit")->text = Images::getIcons(); // Загружаем список иконок
+		c("Events->eventsEdit")->text = Resources::getEvents(); // Загружаем список готовых событий
 	}
-}";s:7:"onclose";s:20:"Editor::genEvents();";}s:6:"label2";N;s:6:"label3";N;s:6:"label4";N;s:8:"listbox1";a:1:{s:7:"onclick";s:329:"$index = $self->itemIndex;
-if ($index != -1) {
-	$event = Editor::$temp->events[$index];
-	c("captionEdit")->text = $event->caption;
-	c("functionEdit")->text = $event->function;
-	c("patternEdit")->text = $event->pattern;
-	c("iconEdit")->inText = $event->icon;
-	c("image1")->loadFromFile(IMG_PATH . $event->icon . ".bmp");
+	
+	static function loadData($index) {
+        self::clearData(); // Очищаем данные
+	
+        $item = Editor::$temp->events[$index];
+        $caption = $item->caption;
+        $function = $item->function;
+        $pattern = $item->pattern;
+        $icon = $item->icon;
+        
+        // Заполняем данные
+        c("Events->captionEdit")->text = $caption;
+        c("Events->functionEdit")->text = $function;
+        c("Events->patternEdit")->text = $pattern;
+        c("Events->iconEdit")->inText = $icon;
+        c("Events->image1")->loadFromFile(IMG_PATH . $icon . ".bmp");
+	}
+	
+	static function clearData() {
+        c("Events->captionEdit")->text = "";
+        c("Events->functionEdit")->text = "";
+        c("Events->patternEdit")->text = "";
+        c("Events->iconEdit")->inText = "";
+        c("Events->image1")->picture->clear();
+	}
+}";s:7:"onclose";s:20:"Editor::genEvents();";}s:6:"label2";N;s:6:"label3";N;s:6:"label4";N;s:8:"listbox1";a:1:{s:11:"onmousedown";s:181:"$index = $self->itemIndex;
+if ($button == 0 && $index != -1) EventsForm::loadData($index);
+if ($button == 1) {
+    EventsForm::clearData();
+    c("listBox1")->itemIndex = -1;
 }";}s:11:"captionedit";N;s:12:"functionedit";N;s:11:"patternedit";N;s:8:"iconedit";a:1:{s:8:"onchange";s:61:"c("image1")->loadFromFile(IMG_PATH . $self->inText . ".bmp");";}s:6:"image1";a:1:{s:7:"onclick";s:226:"$openDlg = c("openDlg1");
 if ($openDlg->execute()) {
 	$file = $openDlg->fileName;
 	file_copy($file, IMG_PATH . basename($file));
 	c("iconEdit")->text = Images::getIcons();
 	c("iconEdit")->inText = basenameNoExt($file);
-}";}s:7:"button2";a:1:{s:7:"onclick";s:382:"$caption = c("captionEdit")->text;
+}";}s:7:"button2";a:1:{s:7:"onclick";s:465:"$caption = c("captionEdit")->text;
+$transCaption = c("transCheck")->checked;
 $function = c("functionEdit")->text;
 $pattern = c("patternEdit")->text;
 $icon = c("iconEdit")->inText;
@@ -605,24 +654,40 @@ $index = c("listBox1")->itemIndex;
 if ($index != -1) {
 	$event = Editor::$temp->events[$index];
 	$event->caption = $caption;
+	$event->transCaption = $transCaption;
 	$event->function = $function;
 	$event->pattern = $pattern;
 	$event->icon = $icon;
 	EventsForm::init();
-}";}s:7:"button1";a:1:{s:7:"onclick";s:239:"$caption = c("captionEdit")->text;
-$function = c("functionEdit")->text;
-$pattern = c("patternEdit")->text;
-$icon = c("iconEdit")->inText;
+}";}s:7:"button1";a:1:{s:7:"onclick";s:247:"Editor::$temp->events[] = new Event("Новое событие", "newEvent", "%func%(\$self)");
+EventsForm::init();
 
-Editor::$temp->events[] = new Event($caption, $function, $pattern, $icon);
-EventsForm::init();";}s:7:"button5";a:1:{s:7:"onclick";s:183:"$index = c("listBox1")->itemIndex;
+$index = c("listBox1")->items->count - 1;
+c("listBox1")->itemIndex = $index;
+EventsForm::loadData($index);
+c("captionEdit")->setFocus();";}s:7:"button5";a:1:{s:7:"onclick";s:210:"$index = c("listBox1")->itemIndex;
 if ($index != -1) {
 	unset(Editor::$temp->events[$index]);
 	Editor::$temp->events = array_values(Editor::$temp->events);
 	EventsForm::init();
+	EventsForm::clearData();
 }";}s:10:"eventsedit";a:1:{s:8:"onchange";s:102:"$index = $self->itemIndex;
 Editor::$temp->events[] = Resources::$events[$index];
-EventsForm::init();";}}s:7:"methods";a:13:{s:8:"--fmedit";a:3:{s:6:"onshow";s:20:"MethodsForm::init();";s:8:"oncreate";s:349:"class MethodsForm {
+EventsForm::init();";}s:7:"button6";a:2:{s:7:"onclick";s:144:"$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+    $obj = Editor::$temp->events[$index];
+    clipboard_setText( serialize($obj) );
+}";s:11:"onmousedown";s:82:"if ($button == 1) {
+    clipboard_setText( serialize(Editor::$temp->events) );
+}";}s:7:"button7";a:2:{s:7:"onclick";s:94:"$obj = unserialize(clipboard_getText());
+Editor::$temp->events[] = $obj;
+EventsForm::init();";s:11:"onmousedown";s:211:"if ($button == 1) {
+    $objs = unserialize( clipboard_getText() );
+    if (is_array($objs)) {
+        Editor::$temp->events = array_merge(Editor::$temp->events, $objs);
+        EventsForm::init();
+    }
+}";}}s:7:"methods";a:15:{s:8:"--fmedit";a:3:{s:6:"onshow";s:20:"MethodsForm::init();";s:8:"oncreate";s:993:"class MethodsForm {
 	static function init() {
 		$methods = Editor::$temp->methods;
 		if ($methods) {
@@ -633,15 +698,38 @@ EventsForm::init();";}}s:7:"methods";a:13:{s:8:"--fmedit";a:3:{s:6:"onshow";s:20
 			c("Methods->listBox1")->text = $list;
 		}
 		else c("Methods->listBox1")->text = "";
-		c("methodsEdit")->text = Resources::getMethods();
+		c("methodsEdit")->text = Resources::getMethods(); // Загружаем список готовых методов
 	}
-}";s:7:"onclose";s:21:"Editor::genMethods();";}s:6:"label2";N;s:6:"label3";N;s:8:"listbox1";a:1:{s:7:"onclick";s:225:"$index = $self->itemIndex;
-if ($index != -1) {
-	$method = Editor::$temp->methods[$index];
-	c("captionEdit")->text = $method->caption;
-	c("functionEdit")->text = $method->function;
-	c("hintEdit")->text = $method->hint;
-}";}s:11:"captionedit";N;s:12:"functionedit";N;s:7:"button2";a:1:{s:7:"onclick";s:320:"$caption = c("captionEdit")->text;
+	
+	static function loadData($index) {
+        self::clearData(); // Очищаем данные
+
+        $item = Editor::$temp->methods[$index];
+        $caption = $item->caption;
+        $function = $item->function;
+        $hint = $item->hint;
+
+        // Заполняем данные
+        c("Methods->captionEdit")->text = $caption;
+        c("Methods->functionEdit")->text = $function;
+        c("Methods->hintEdit")->text = $hint;
+	}
+
+	static function clearData() {
+        c("Methods->captionEdit")->text = "";
+        c("Methods->functionEdit")->text = "";
+        c("Methods->hintEdit")->text = "";
+	}
+}";s:7:"onclose";s:21:"Editor::genMethods();";}s:6:"label2";N;s:6:"label3";N;s:8:"listbox1";a:1:{s:11:"onmousedown";s:183:"$index = $self->itemIndex;
+if ($button == 0 && $index != -1) MethodsForm::loadData($index);
+if ($button == 1) {
+    MethodsForm::clearData();
+    c("listBox1")->itemIndex = -1;
+}";}s:11:"captionedit";N;s:12:"functionedit";a:1:{s:8:"onchange";s:182:"$func = $self->text;
+if (preg_match('/^(.*)\(\)$/', $func, $matches)) {
+    $func = $matches[1];
+}
+c("hintEdit")->text = preg_replace('/^.* \(/', "$func (", c("hintEdit")->text);";}s:7:"button2";a:1:{s:7:"onclick";s:320:"$caption = c("captionEdit")->text;
 $function = c("functionEdit")->text;
 $hint = c("hintEdit")->text;
 
@@ -652,19 +740,35 @@ if ($index != -1) {
 	$method->function = $function;
 	$method->hint = $hint;
 	MethodsForm::init();
-}";}s:7:"button1";a:1:{s:7:"onclick";s:194:"$caption = c("captionEdit")->text;
-$function = c("functionEdit")->text;
-$hint = c("hintEdit")->text;
+}";}s:7:"button1";a:1:{s:7:"onclick";s:256:"Editor::$temp->methods[] = new Method("Новый метод", "newMethod()", "newMethod ( void )");
+MethodsForm::init();
 
-Editor::$temp->methods[] = new Method($caption, $function, $hint);
-MethodsForm::init();";}s:7:"button5";a:1:{s:7:"onclick";s:187:"$index = c("listBox1")->itemIndex;
+$index = c("listBox1")->items->count - 1;
+c("listBox1")->itemIndex = $index;
+MethodsForm::loadData($index);
+c("captionEdit")->setFocus();";}s:7:"button5";a:1:{s:7:"onclick";s:218:"$index = c("listBox1")->itemIndex;
 if ($index != -1) {
 	unset(Editor::$temp->methods[$index]);
 	Editor::$temp->methods = array_values(Editor::$temp->methods);
 	MethodsForm::init();
+    MethodsForm::clearData();
 }";}s:8:"hintedit";N;s:8:"opendlg1";a:0:{}s:6:"label5";N;s:11:"methodsedit";a:1:{s:8:"onchange";s:105:"$index = $self->itemIndex;
 Editor::$temp->methods[] = Resources::$methods[$index];
-MethodsForm::init();";}}s:10:"properties";a:20:{s:8:"--fmedit";a:3:{s:6:"onshow";s:23:"PropertiesForm::init();";s:8:"oncreate";s:433:"class PropertiesForm {
+MethodsForm::init();";}s:7:"button6";a:2:{s:7:"onclick";s:145:"$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+    $obj = Editor::$temp->methods[$index];
+    clipboard_setText( serialize($obj) );
+}";s:11:"onmousedown";s:83:"if ($button == 1) {
+    clipboard_setText( serialize(Editor::$temp->methods) );
+}";}s:7:"button7";a:2:{s:7:"onclick";s:96:"$obj = unserialize(clipboard_getText());
+Editor::$temp->methods[] = $obj;
+MethodsForm::init();";s:11:"onmousedown";s:214:"if ($button == 1) {
+    $objs = unserialize( clipboard_getText() );
+    if (is_array($objs)) {
+        Editor::$temp->methods = array_merge(Editor::$temp->methods, $objs);
+        MethodsForm::init();
+    }
+}";}}s:10:"properties";a:24:{s:8:"--fmedit";a:3:{s:6:"onshow";s:23:"PropertiesForm::init();";s:8:"oncreate";s:1842:"class PropertiesForm {
 	static function init() {
 		$properties = Editor::$temp->properties;
 		if ($properties) {
@@ -675,38 +779,55 @@ MethodsForm::init();";}}s:10:"properties";a:20:{s:8:"--fmedit";a:3:{s:6:"onshow"
 			c("Properties->listBox1")->text = $list;
 		}
 		else c("Properties->listBox1")->text = "";
-		c("typeEdit")->text = Components::getPropTypes();
-		c("propertiesEdit")->text = Resources::getProperties();
+		c("typeEdit")->text = Components::getPropTypes(); // Загрузка типов свойств
+		c("propertiesEdit")->text = Resources::getProperties(); // Загрузка готовых свойств
 	}
-}";s:7:"onclose";s:24:"Editor::genProperties();";}s:6:"label2";N;s:6:"label3";N;s:8:"listbox1";a:1:{s:7:"onclick";s:705:"$index = $self->itemIndex;
-if ($index != -1) {
-	$property = Editor::$temp->properties[$index];
-	c("captionEdit")->text = $property->caption;
-	c("typeEdit")->inText = $property->type;
-	c("variableEdit")->text = $property->variable;
-	c("extCheck")->checked = $property->toExtends;
-	c("designCheck")->checked = $property->updateDesign;
 	
-	if (is_array($property->values)) {
-		c("valuesEdit")->text = implode(",", $property->values);
+	static function loadData($index) {
+        self::clearData(); // Очищаем данные
+
+        $item = Editor::$temp->properties[$index];
+        $caption = $item->caption;
+        $type = $item->type;
+        $variable = $item->variable;
+        $realVar = $item->realVar;
+        $class = $item->class;
+        $values = $item->values;
+        $toExtends = $item->toExtends;
+        $updateDesign = $item->updateDesign;
+
+        // Заполняем данные
+        c("Properties->captionEdit")->text = $caption;
+        c("Properties->typeEdit")->inText = $type;
+        c("Properties->variableEdit")->text = $variable;
+        c("Properties->realEdit")->text = $realVar;
+        c("Properties->classEdit")->text = $class;
+        c("Properties->valuesEdit")->text = $values;
+        c("Properties->extCheck")->checked = $toExtends;
+        c("Properties->designCheck")->checked = $updateDesign;
 	}
-	else c("valuesEdit")->text = "";
-	
-	if ($property->realVar) {
-		c("realEdit")->text = $property->realVar;
+
+	static function clearData() {
+        c("Properties->captionEdit")->text = "";
+        c("Properties->typeEdit")->inText = "";
+        c("Properties->variableEdit")->text = "";
+        c("Properties->realEdit")->text = "";
+        c("Properties->classEdit")->text = "";
+        c("Properties->valuesEdit")->text = "";
+        c("Properties->extCheck")->checked = false;
+        c("Properties->designCheck")->checked = false;
 	}
-	else c("realEdit")->text = "";
-	
-	if ($property->class) {
-		c("classEdit")->text = $property->class;
-	}
-	else c("classEdit")->text = "";
-}";}s:11:"captionedit";a:0:{}s:7:"button2";a:1:{s:7:"onclick";s:735:"$caption = c("captionEdit")->text;
+}";s:7:"onclose";s:24:"Editor::genProperties();";}s:6:"label2";N;s:6:"label3";N;s:8:"listbox1";a:1:{s:11:"onmousedown";s:189:"$index = $self->itemIndex;
+if ($button == 0 && $index != -1) PropertiesForm::loadData($index);
+if ($button == 1) {
+    PropertiesForm::clearData();
+    c("listBox1")->itemIndex = -1;
+}";}s:11:"captionedit";a:0:{}s:7:"button2";a:1:{s:7:"onclick";s:698:"$caption = c("captionEdit")->text;
 $type = c("typeEdit")->inText;
 $variable = c("variableEdit")->text;
 $realVar = c("realEdit")->text;
 $class = c("classEdit")->text;
-$values = c("valuesEdit")->text ? explode(",", c("valuesEdit")->text) : null;
+$values = c("valuesEdit")->items->lines;
 $toExtends = c("extCheck")->checked;
 $updateDesign = c("designCheck")->checked;
 
@@ -722,24 +843,48 @@ if ($index != -1) {
 	$property->toExtends = $toExtends;
 	$property->updateDesign = $updateDesign;
 	PropertiesForm::init();
-}";}s:7:"button1";a:1:{s:7:"onclick";s:484:"$caption = c("captionEdit")->text;
-$type = c("typeEdit")->inText;
-$variable = c("variableEdit")->text;
-$realVar = c("realEdit")->text;
-$class = c("classEdit")->text;
-$values = c("valuesEdit")->text ? explode(",", c("valuesEdit")->text) : null;
-$toExtends = c("extCheck")->checked;
-$updateDesign = c("designCheck")->checked;
+}";}s:7:"button1";a:1:{s:7:"onclick";s:252:"Editor::$temp->properties[] = new Property("Новое свойство", "text", "newProp");
+PropertiesForm::init();
 
-Editor::$temp->properties[] = new Property($caption, $type, $variable, $realVar, $class, $values, $toExtends, $updateDesign);
-PropertiesForm::init();";}s:7:"button5";a:1:{s:7:"onclick";s:199:"$index = c("listBox1")->itemIndex;
+$index = c("listBox1")->items->count - 1;
+c("listBox1")->itemIndex = $index;
+PropertiesForm::loadData($index);
+c("captionEdit")->setFocus();";}s:7:"button5";a:1:{s:7:"onclick";s:233:"$index = c("listBox1")->itemIndex;
 if ($index != -1) {
-	unset(Editor::$temp->properties[$index]);
+    unset(Editor::$temp->properties[$index]);
 	Editor::$temp->properties = array_values(Editor::$temp->properties);
 	PropertiesForm::init();
-}";}s:8:"typeedit";N;s:12:"variableedit";N;s:6:"label4";N;s:6:"label5";N;s:9:"classedit";N;s:10:"valuesedit";N;s:8:"extcheck";N;s:11:"designcheck";N;s:6:"label6";N;s:8:"realedit";N;s:6:"label7";N;s:14:"propertiesedit";a:1:{s:8:"onchange";s:114:"$index = $self->itemIndex;
+	PropertiesForm::clearData();
+}";}s:8:"typeedit";N;s:12:"variableedit";N;s:6:"label4";N;s:6:"label5";N;s:9:"classedit";N;s:8:"extcheck";N;s:11:"designcheck";N;s:6:"label6";N;s:8:"realedit";N;s:6:"label7";N;s:14:"propertiesedit";a:1:{s:8:"onchange";s:114:"$index = $self->itemIndex;
 Editor::$temp->properties[] = Resources::$properties[$index];
-PropertiesForm::init();";}}s:6:"addons";a:10:{s:8:"--fmedit";a:3:{s:6:"onshow";s:19:"AddonsForm::init();";s:8:"oncreate";s:487:"class AddonsForm {
+PropertiesForm::init();";}s:7:"button4";a:1:{s:7:"onclick";s:275:"$index = c("valuesEdit")->itemIndex;
+if ($index != -1) {
+    $lines = c("valuesEdit")->items->lines;
+    unset($lines[$index]);
+    $lines = array_values($lines);
+    c("valuesEdit")->text = $lines;
+    c("valuesEdit")->inText = "";
+    c("valuesEdit")->setFocus();
+}";}s:7:"button3";a:1:{s:7:"onclick";s:155:"$text = c("valuesEdit")->inText;
+if ($text) {
+    c("valuesEdit")->text .= $text;
+    c("valuesEdit")->inText = "";
+    c("valuesEdit")->setFocus();
+}";}s:10:"valuesedit";N;s:7:"button7";a:2:{s:7:"onclick";s:102:"$obj = unserialize(clipboard_getText());
+Editor::$temp->properties[] = $obj;
+PropertiesForm::init();";s:11:"onmousedown";s:223:"if ($button == 1) {
+    $objs = unserialize( clipboard_getText() );
+    if (is_array($objs)) {
+        Editor::$temp->properties = array_merge(Editor::$temp->properties, $objs);
+        PropertiesForm::init();
+    }
+}";}s:7:"button6";a:2:{s:7:"onclick";s:148:"$index = c("listBox1")->itemIndex;
+if ($index != -1) {
+    $obj = Editor::$temp->properties[$index];
+    clipboard_setText( serialize($obj) );
+}";s:11:"onmousedown";s:86:"if ($button == 1) {
+    clipboard_setText( serialize(Editor::$temp->properties) );
+}";}}s:6:"addons";a:10:{s:8:"--fmedit";a:3:{s:6:"onshow";s:19:"AddonsForm::init();";s:8:"oncreate";s:487:"class AddonsForm {
 	static function init() {
 		$exts = Editor::$temp->modules;
 		$_dlls = Editor::$temp->dlls;
